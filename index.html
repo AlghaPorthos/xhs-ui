@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小红书风格 · 帖子详情 + 树形回帖</title>
+<style>
+  :root{--red:#ff2442;--bg:#f5f5f7;--ink:#333;--sub:#666;--line:#eee;--card:#fff}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:90px}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;border:none;background:none;cursor:pointer}
+
+  /* ===== 顶栏 ===== */
+  header{position:sticky;top:0;z-index:50;background:#fff;box-shadow:0 1px 0 var(--line)}
+  .hwrap{max-width:1000px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:12px 20px}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px}
+  .logo .mark{width:34px;height:34px;border-radius:10px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .logo b{color:var(--red)}
+  .search{flex:1;max-width:420px;background:#f2f2f4;border-radius:18px;padding:8px 16px;color:#999;font-size:13px;display:flex;gap:8px;align-items:center}
+  .hlinks{margin-left:auto;display:flex;gap:20px;align-items:center;font-size:14px;color:var(--sub)}
+  .hlinks .me{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ffd9e0,#ff8fa8);display:flex;align-items:center;justify-content:center}
+
+  /* ===== 主体两栏 ===== */
+  main{max-width:1000px;margin:18px auto;background:var(--card);border-radius:16px;overflow:hidden;display:flex;min-height:660px}
+  /* 左:图片轮播 */
+  .media{width:46%;min-width:320px;background:#fafafa;position:relative;display:flex;align-items:center;justify-content:center}
+  .slides{position:relative;width:100%;height:100%;min-height:480px}
+  .slide{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#fff}
+  .slide.on{display:flex}
+  .slide .art{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:110px;filter:drop-shadow(0 12px 30px rgba(0,0,0,.25))}
+  .slide .cap{position:absolute;bottom:52px;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);padding:5px 14px;border-radius:14px;font-size:13px}
+  .s1 .art{background:linear-gradient(140deg,#ffb88c,#ff8177 55%,#ff5566)}
+  .s2 .art{background:linear-gradient(140deg,#a8edea,#fed6e3 60%,#c3aef0)}
+  .s3 .art{background:linear-gradient(140deg,#f6d365,#fda085 70%,#f76b8a)}
+  .dots{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
+  .dots i{width:7px;height:7px;border-radius:4px;background:#ffffff88;cursor:pointer;transition:.25s}
+  .dots i.on{width:18px;background:#fff}
+  .arrow{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.3);color:#fff;font-size:16px;z-index:5}
+  .arrow.l{left:12px}.arrow.r{right:12px}
+  .pagenum{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.35);color:#fff;font-size:12px;padding:3px 10px;border-radius:12px}
+
+  /* 右:内容 */
+  .content{flex:1;padding:24px 26px;display:flex;flex-direction:column;min-width:0}
+  .author{display:flex;align-items:center;gap:10px}
+  .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ff9a9e,#fecfef);display:flex;align-items:center;justify-content:center;font-size:20px}
+  .author .info{line-height:1.3}
+  .author .info b{font-size:15px}
+  .author .info span{display:block;font-size:12px;color:var(--sub)}
+  .follow{margin-left:auto;border:1px solid var(--red);color:var(--red);border-radius:16px;padding:5px 18px;font-size:13px;font-weight:600}
+  .follow:hover{background:var(--red);color:#fff}
+  h1.title{font-size:20px;font-weight:700;margin:16px 0 10px;line-height:1.5}
+  .body{font-size:14.5px;line-height:1.85;color:#3a3a3a;white-space:pre-line}
+  .tags{margin-top:12px;font-size:13px;color:#3b6ea5;display:flex;flex-wrap:wrap;gap:6px}
+  .meta{margin-top:12px;font-size:12px;color:#aaa}
+  .meta i{font-style:normal;margin:0 8px}
+  .acts{display:flex;gap:22px;margin:18px 0 8px;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--sub);font-size:14px}
+  .act{display:flex;gap:6px;align-items:center;cursor:pointer;transition:.15s}
+  .act:hover{color:var(--red)}
+  .act.on{color:var(--red)}
+  .act .ic{font-size:18px}
+
+  /* ===== 评论区(树形) ===== */
+  .cmt-head{display:flex;align-items:center;gap:8px;margin:14px 0 6px;font-size:15px}
+  .cmt-head b{font-size:18px}
+  .cmt-head .tab{color:var(--sub);font-size:13px;padding:3px 12px;border-radius:12px;cursor:pointer}
+  .cmt-head .tab.on{color:var(--red);background:#fff0f2}
+  .cmt-list{flex:1}
+  /* 一级评论 */
+  .cmt{display:flex;gap:10px;padding:14px 0}
+  .cmt .cavatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .cmt .cbody{flex:1;min-width:0}
+  .cmt .who{font-size:13px;color:var(--sub)}
+  .cmt .who .op{color:#8bb7e5;font-size:11px;border:1px solid #cfe3f7;border-radius:4px;padding:0 4px;margin-left:6px}
+  .cmt .txt{font-size:14.5px;line-height:1.7;margin:3px 0}
+  .cmt .txt .at{color:#3b6ea5}
+  .cfoot{display:flex;gap:16px;color:#aaa;font-size:12px;align-items:center}
+  .cfoot .tm{margin-right:auto}
+  .cfoot button{color:#aaa;font-size:12px}
+  .cfoot button:hover{color:var(--red)}
+  .cfoot .lk.on{color:var(--red)}
+  /* 二级回复块 */
+  .sub{margin-top:10px;background:#f8f8fa;border-radius:12px;padding:2px 12px}
+  .sub .cmt{padding:10px 0}
+  .sub .cavatar{width:26px;height:26px;font-size:12px}
+  /* 三级嵌套(树形) */
+  .subsub{margin:8px 0 10px 36px;border-left:2px solid #eee;box-shadow:none;background:#f8f8fa;border-radius:0 12px 12px 0;padding-left:12px}
+  .subsub .cmt{padding:8px 0}
+  .subsub .cavatar{width:24px;height:24px;font-size:11px}
+  /* 展开/收起 回复 */
+  .more{display:flex;align-items:center;gap:6px;color:#3b6ea5;font-size:13px;padding:6px 0 10px;cursor:pointer;font-weight:500}
+  .more .cnt{background:#eef4fb;border-radius:10px;padding:2px 10px}
+  .more .arr{transition:.2s;font-size:11px}
+  .more.open .arr{transform:rotate(90deg)}
+  .folded{display:none}
+  .open+.folded,.folded.show{display:block}
+
+  /* ===== 底部输入栏 ===== */
+  .composer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);z-index:60}
+  .composer .in{max-width:1000px;margin:0 auto;display:flex;gap:14px;align-items:center;padding:12px 20px}
+  .composer input{flex:1;border:none;background:#f2f2f4;border-radius:20px;padding:11px 20px;font-size:14px;outline:none;font-family:inherit}
+  .composer input:focus{background:#fff;box-shadow:0 0 0 2px #ffd6dd}
+  .send{background:var(--red);color:#fff;border-radius:20px;padding:9px 26px;font-size:14px;font-weight:600}
+  .send:active{transform:scale(.96)}
+  .composer .emo{font-size:22px;cursor:pointer}
+
+  /* toast */
+  #toast{position:fixed;left:50%;top:70px;transform:translateX(-50%) translateY(-16px);background:rgba(0,0,0,.75);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:760px){
+    main{flex-direction:column}
+    .media{width:100%;min-width:0}
+    .slides{min-height:340px}
+    .hlinks span{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="logo"><span class="mark">书</span><span><b>小红书</b> · 树形回帖 Demo</span></div>
+    <div class="search">🔍 搜索小红书</div>
+    <div class="hlinks"><span>首页</span><span>发现</span><span>消息</span><span class="me">🐱</span></div>
+  </div>
+</header>
+
+<main>
+  <!-- 左:图片轮播 -->
+  <div class="media">
+    <div class="slides" id="slides">
+      <div class="slide s1 on"><div class="art">🏔️</div><div class="cap">图1 · 山顶的日出</div></div>
+      <div class="slide s2"><div class="art">🌸</div><div class="cap">图2 · 沿路的花田</div></div>
+      <div class="slide s3"><div class="art">☕</div><div class="cap">图3 · 山脚咖啡店</div></div>
+      <div class="pagenum"><span id="pg">1</span>/3</div>
+      <button class="arrow l" onclick="go(-1)">‹</button>
+      <button class="arrow r" onclick="go(1)">›</button>
+      <div class="dots" id="dots"><i class="on" onclick="jump(0)"></i><i onclick="jump(1)"></i><i onclick="jump(2)"></i></div>
+    </div>
+  </div>
+
+  <!-- 右:帖子内容 + 评论区 -->
+  <div class="content">
+    <div class="author">
+      <div class="avatar">🧗</div>
+      <div class="info"><b>山系青年阿岚</b><span>粉丝 2.4万 · 周边 · 户外</span></div>
+      <button class="follow" onclick="toast('已关注(演示)')">关注</button>
+    </div>
+
+    <h1 class="title">周末逃离计划!这条徒步路线美到失语⛰️</h1>
+    <div class="body">坐标:杭州 · 临安太子尖
+全程 9.8km,爬升 650m,新手友好!
+早上 5:30 出发刚好赶上日出,云海翻涌的那一瞬间真的会忘记呼吸…
+
+装备清单:
+🎒 20L 小鹰背包
+🥾 低帮徒步鞋(后半段碎石路多)
+🧥 防风外套(山顶风大)
+🍫 能量胶×2 + 电解质水 1L
+
+下山后山脚的咖啡店一定要去,老板自己烘的豆子,拿铁只要 22!</div>
+    <div class="tags"><span>#徒步路线</span><span>#杭州周边</span><span>#日出云海</span><span>#新手徒步</span></div>
+    <div class="meta">编辑于 09-26 浙江 · 杭州<i>|</i>IP 属地浙江</div>
+
+    <div class="acts">
+      <div class="act" onclick="like(this,1286)"><span class="ic">🤍</span><span class="n">1286</span></div>
+      <div class="act" onclick="like(this,342)"><span class="ic">☆</span><span class="n">342</span></div>
+      <div class="act"><span class="ic">💬</span><span class="n" id="cmtCount">5</span></div>
+      <div class="act" onclick="toast('分享面板(演示)')"><span class="ic">↗</span><span class="n">分享</span></div>
+    </div>
+
+    <div class="cmt-head"><b>全部评论</b><span class="tab on">热榜</span><span class="tab">最新</span></div>
+    <div class="cmt-list" id="cmtList"></div>
+  </div>
+</main>
+
+<!-- 底部评论输入 -->
+<div class="composer">
+  <div class="in">
+    <span class="emo" onclick="toast('表情面板(演示)')">😊</span>
+    <input id="cInput" placeholder="说点什么… (回车或点发送,仅前端演示)">
+    <button class="send" onclick="send()">发送</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ================= 评论数据(树形) ================= */
+const COMMENTS=[
+ {who:'米饭天下第一',av:'🍚',op:false,txt:'请问全程走下来大概几个小时呀?想这周末去!',time:'09-26',likes:89,liked:false,
+  replies:[
+   {who:'山系青年阿岚',av:'🧗',op:true,txt:'休闲走 4.5h,拍照党预留 6h~',time:'09-26',likes:23,liked:false,replies:[
+     {who:'米饭天下第一',av:'🍚',op:false,txt:'收到!感谢感谢🙏',time:'09-26',likes:5,liked:false,replies:[]}
+   ]},
+   {who:'是橙子不是橘子',av:'🍊',op:false,txt:'上周刚走,4 小时出头,天气好绝了',time:'09-27',likes:12,liked:false,replies:[]}
+  ]},
+ {who:'登山杖批发商',av:'🦯',op:false,txt:'装备清单直接抄作业了。补充一点:碎石路建议戴护膝',time:'09-26',likes:45,liked:false,
+  replies:[
+   {who:'山系青年阿岚',av:'🧗',op:true,txt:'对!护膝真的很重要,我第一次走完膝盖废了两天😂',time:'09-26',likes:18,liked:false,replies:[
+     {who:'怕高但爱山',av:'🍀',op:false,txt:'蹲一个护膝链接?',time:'09-27',likes:3,liked:false,replies:[
+       {who:'山系青年阿岚',av:'🧗',op:true,txt:'任意运动品牌的基础款就行,不用买贵的~',time:'09-27',likes:2,liked:false,replies:[]}
+     ]}
+   ]}
+  ]},
+ {who:'云海收藏家',av:'☁️',op:false,txt:'这个云海!!请问 5:30 是从登山口出发还是从杭州出发呀',time:'09-27',likes:31,liked:false,
+  replies:[
+   {who:'山系青年阿岚',av:'🧗',op:true,txt:'从登山口!杭州出发 3:00 就得起,也可以山脚民宿住一晚',time:'09-27',likes:15,liked:false,replies:[]}
+  ]},
+ {who:'Nomad_Leo',av:'🦁',op:false,txt:'Great shots! What camera did you use for the sunrise?',time:'09-27',likes:8,liked:false,
+  replies:[
+   {who:'山系青年阿岚',av:'🧗',op:true,txt:'iPhone 15 Pro + a bit of luck 😄',time:'09-27',likes:6,liked:false,replies:[]}
+  ]}
+];
+
+/* ================= 渲染 ================= */
+const list=document.getElementById('cmtList');
+function replyCount(r){return r.replies.length+r.replies.reduce((a,q)=>a+replyCount(q),0);}
+function node(c,lv){
+ const wrap=document.createElement('div');
+ wrap.className=lv===0?'cmt':(lv===1?'cmt':'cmt');
+ wrap.innerHTML=`
+  <div class="cavatar" style="background:${bg()}">${c.av}</div>
+  <div class="cbody">
+   <div class="who">${c.who}${c.op?'<span class="op">作者</span>':''}</div>
+   <div class="txt">${c.txt}</div>
+   <div class="cfoot">
+    <span class="tm">${c.time}</span>
+    <button class="lk ${c.liked?'on':''}" onclick="cLike(this)"><span>${c.liked?'❤️':'🤍'}</span> <span class="n">${c.likes}</span></button>
+    <button onclick="replyAt('${c.who}')">回复</button>
+   </div>
+   ${c.replies.length?subTree(c,lv):''}
+  </div>`;
+ return wrap;
+}
+function subTree(c,lv){
+ const box=document.createElement('div');
+ box.className=lv===0?'sub':'subsub';
+ const total=replyCount(c);
+ box.innerHTML=`<div class="more" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('show')">
+   <span class="cnt">展开 ${total} 条回复</span><span class="arr">▶</span></div>
+  <div class="folded"></div>`;
+ const holder=box.querySelector('.folded');
+ c.replies.forEach(r=>holder.appendChild(node(r,lv+1)));
+ return box;
+}
+const bg=()=>'linear-gradient(135deg,hsl('+Math.floor(Math.random()*360)+' 70% 85%),hsl('+Math.floor(Math.random()*360)+' 70% 75%))';
+function render(){list.innerHTML='';COMMENTS.forEach(c=>list.appendChild(node(c,0)));document.getElementById('cmtCount').textContent=COMMENTS.length;}
+render();
+
+/* ================= 交互(演示级) ================= */
+function like(el,n){const on=el.classList.toggle('on');const s=el.querySelector('.n');s.textContent=+s.textContent+(on?1:-1);el.querySelector('.ic').textContent=on?'❤️':'🤍';}
+function cLike(el){const on=el.classList.toggle('on');const s=el.querySelector('.n');s.textContent=+s.textContent+(on?1:-1);el.querySelector('span').textContent=on?'❤️':'🤍';}
+function replyAt(who){document.getElementById('cInput').value='@'+who+' ';document.getElementById('cInput').focus();}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1600);}
+function send(){
+ const inp=document.getElementById('cInput'),v=inp.value.trim();
+ if(!v){toast('先写点什么吧~');return;}
+ COMMENTS.unshift({who:'我',av:'😎',op:false,txt:v,time:'刚刚',likes:0,liked:false,replies:[]});
+ inp.value='';render();toast('评论发布成功(仅前端演示)');window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+}
+document.getElementById('cInput').addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+
+/* 轮播 */
+let cur=0;const slides=document.querySelectorAll('.slide'),dots=document.querySelectorAll('.dots i');
+function show(i){cur=(i+slides.length)%slides.length;slides.forEach((s,k)=>s.classList.toggle('on',k===cur));dots.forEach((d,k)=>d.classList.toggle('on',k===cur));document.getElementById('pg').textContent=cur+1;}
+function go(d){show(cur+d);}function jump(i){show(i);}
+</script>
+</body>
+</html>
